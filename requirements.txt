@@ -1,0 +1,4 @@
+psycopg2-binary==2.9.4; python_version >= "3.6"
+pyqt5-qt5==5.15.2; python_version >= "3.7"
+pyqt5-sip==12.11.0; python_version >= "3.7"
+pyqt5==5.15.7; python_version >= "3.7"
