@@ -8,6 +8,7 @@ authors = ["Danil Sidoruk <danilsidoruknv@yandex.ru>"]
 python = "^3.10"
 PyQt5 = "^5.15.7"
 psycopg2-binary = "^2.9.4"
+python-dotenv = "^0.21.0"
 
 [tool.poetry.dev-dependencies]
 
