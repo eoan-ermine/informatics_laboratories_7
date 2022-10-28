@@ -16,6 +16,7 @@ load_dotenv()
 
 class MainWindow(QWidget):
 	def __init__(self):
+		super().__init__()
 		self._connect_to_db()
 		self.setWindowTitle("Schedule")
 
@@ -70,7 +71,7 @@ class MainWindow(QWidget):
 		self.monday_gbox.setLayout(self.mvbox)
 
 	def _update_monday_table(self):
-		self.cursor.execute("SELECT * FROM timetable WHERE day = 'wednesday'")
+		self.cursor.execute("SELECT * FROM bot.timetable WHERE day = 3")
 		records = list(self.cursor.fetchall())
 
 		self.monday_table.setRowCount(len(records) + 1)
