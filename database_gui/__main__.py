@@ -7,9 +7,11 @@ from PyQt5.QtWidgets import (
 	QApplication, QWidget, QTabWidget,
 	QAbstractScrollArea, QVBoxLayout, QHBoxLayout,
 	QTableWidget, QGroupBox, QTableWidgetItem,
-	QPushButton, QMessageBox
+	QPushButton, QMessageBox, QLabel
 )
+
 from .database_table_widget import QDatabaseTableWidget
+from .database_tab import QDatabaseTab, QDatabaseTabItem
 
 load_dotenv()
 
@@ -21,7 +23,30 @@ class MainWindow(QWidget):
 		self.setWindowTitle("Schedule")
 
 		self.vbox = QVBoxLayout(self)
-		self.vbox.addWidget(QDatabaseTableWidget(self.conn, "bot", "timetable"))
+		self.tabs = QTabWidget(self)
+
+		self.tabs.addTab(
+			QDatabaseTab(
+				[QDatabaseTabItem(QDatabaseTableWidget(self.conn, "bot", "subject"))]
+			), "Subjects"
+		)
+
+		self.tabs.addTab(
+			QDatabaseTab(
+				[QDatabaseTabItem(QDatabaseTableWidget(self.conn, "bot", "teacher"))]
+			), "Teachers"
+		)
+
+		self.tabs.addTab(
+			QDatabaseTab(
+				[
+					QDatabaseTabItem(QDatabaseTableWidget(self.conn, "bot", "timetable", f"day={i} ORDER BY week, id"), f"Day #{i}")
+					for i in range(1, 6)
+				]
+			), "Timetable"
+		)
+
+		self.vbox.addWidget(self.tabs)
 		self.setLayout(self.vbox)
 
 	def _connect_to_db(self):

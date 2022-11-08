@@ -13,43 +13,48 @@ from .table_widget_button import QTableWidgetButton
 
 
 class QDatabaseTableWidget(QTableWidget):
-	def __init__(self, connection, schema_name: str, table_name: str):
+	def __init__(self, connection, schema_name: str, table_name: str, predicate: str = None):
 		super().__init__()
 
 		self.connection = connection
 		self.cursor = connection.cursor(cursor_factory=RealDictCursor)
 		
-		self.schema_name = schema_name
-		self.table_name = table_name
+		self.schema_name, self.table_name, self.predicate = schema_name, table_name, predicate
 		self.column_names = []
 		self.buttons_offset = None
 
+		self.current_row = 0
+
 		self._initialize_table_widget()
-		self._update_contents()
+		self.update_contents()
 
 	def _retrieve_rows(self):
-		self.cursor.execute(f"SELECT * FROM {self.schema_name}.{self.table_name}")
+		select_query = f"SELECT * FROM {self.schema_name}.{self.table_name}"
+		if self.predicate:
+			select_query = select_query + f" WHERE {self.predicate}"
+
+		self.cursor.execute(select_query)
 		return self.cursor.fetchall()
 
 	def _append_row(self, **data):
-		current_row =  data["id"] - 1
-
 		for i, value in enumerate(data.values()):
-			self.setItem(current_row, i, QTableWidgetItem(str(value)))
+			self.setItem(self.current_row, i, QTableWidgetItem(str(value)))
 
 		update_button = QTableWidgetButton("Update")
-		update_button.clicked.connect(lambda state, row=current_row, row_id=data["id"]: self._update_row(row, row_id))
-		self.setCellWidget(current_row, self.buttons_offset, update_button)
+		update_button.clicked.connect(lambda state, row=self.current_row, row_id=data["id"]: self._update_row(row, row_id))
+		self.setCellWidget(self.current_row, self.buttons_offset, update_button)
 
 		delete_button = QTableWidgetButton("Delete")
 		delete_button.clicked.connect(lambda state, row_id=data["id"]: self._delete_row(row_id))
-		self.setCellWidget(current_row, self.buttons_offset + 1, delete_button)
+		self.setCellWidget(self.current_row, self.buttons_offset + 1, delete_button)
+
+		self.current_row += 1
 
 	def _append_mother_row(self):
 		current_row = self.rowCount() - 1
 
 		create_button = QTableWidgetButton("Create")
-		create_button.clicked.connect(lambda state, row=current_row: self._create_row(row))
+		create_button.clicked.connect(lambda state, row=self.current_row: self._create_row(row))
 		self.setCellWidget(current_row, self.buttons_offset, create_button)
 
 	def _initialize_table_widget(self):
@@ -63,15 +68,18 @@ class QDatabaseTableWidget(QTableWidget):
 		self.setColumnCount(len(self.column_names) + 2) # Update (create) button, delete button
 		self.setHorizontalHeaderLabels(self.column_names + ["", ""])
 
-	def _update_contents(self):
+	def update_contents(self):
 		self.clearContents()
 
 		rows = self._retrieve_rows()
 		self.setRowCount(len(rows) + 1) # One more row for mother row
+		self.current_row = 0
 
 		for i, row in enumerate(rows):
 			self._append_row(**row)
 		self._append_mother_row()
+
+		self.resizeColumnsToContents()
 
 
 	def _create_row(self, row_idx: int):
@@ -90,7 +98,7 @@ class QDatabaseTableWidget(QTableWidget):
 			QMessageBox.critical(self, "Операция невозможна", "Строка с указанным идентификатором уже существует. Пожалуйста, измените идентификатор на уникальный и повторите попытку")
 			return
 
-		self._update_contents()
+		self.update_contents()
 
 	def _update_row(self, row_idx: int, row_id: int):
 		column_values = [self.item(row_idx, i).text() for i in range(len(self.column_names))]
@@ -104,8 +112,8 @@ class QDatabaseTableWidget(QTableWidget):
 		except ForeignKeyViolation:
 			QMessageBox.critical(self, "Операция невозможна", "Нарушение foreign key ограничения. Пожалуйста, устраните его и повторите попытку")
 
-		self._update_contents()
+		self.update_contents()
 
 	def _delete_row(self, row_id: int):
 		self.cursor.execute(f"DELETE FROM {self.schema_name}.{self.table_name} WHERE id = %s", (row_id,))
-		self._update_contents()
+		self.update_contents()
