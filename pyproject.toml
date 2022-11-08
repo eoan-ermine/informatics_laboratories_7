@@ -11,6 +11,10 @@ psycopg2-binary = "^2.9.4"
 python-dotenv = "^0.21.0"
 
 [tool.poetry.dev-dependencies]
+pre-commit = "^2.20.0"
+black = "^22.10.0"
+isort = "^5.10.1"
+pylint = "^2.15.5"
 
 [tool.poetry.scripts]
 database_gui = "database_gui.__main__:main"
