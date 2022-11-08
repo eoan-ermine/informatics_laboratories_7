@@ -22,3 +22,24 @@ database_gui = "database_gui.__main__:main"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# LINTERS
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "C0114",  # missing-module-docstring
+  "C0116",  # missing-function-docstring
+  "R0903",  # too-few-public-methods (for sqlalchemy tables and pydantic classes)
+  "C0115",  # missing-class-docstring (for api routes)
+]
+
+[tool.black]
+target-version = ['py310']
+line-length = 120
+
+[tool.isort]
+py_version = 310
+profile = "black"
