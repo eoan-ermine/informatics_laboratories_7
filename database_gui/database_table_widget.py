@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import (
 	QSizePolicy
 )
 
+from .table_widget_button import QTableWidgetButton
+
+
 class QDatabaseTableWidget(QTableWidget):
 	def __init__(self, connection, schema_name: str, table_name: str):
 		super().__init__()
@@ -27,41 +30,26 @@ class QDatabaseTableWidget(QTableWidget):
 		self.cursor.execute(f"SELECT * FROM {self.schema_name}.{self.table_name}")
 		return self.cursor.fetchall()
 
-	def _create_button_widget(self, text: str):
-		button = QPushButton()
-		button.setText(text)
-		button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-	
-		layout = QHBoxLayout()
-		layout.addWidget(button)
-		layout.setAlignment(QtCore.Qt.AlignCenter)
-		layout.setContentsMargins(0, 0, 0, 0)
-
-		widget = QWidget()
-		widget.setLayout(layout)
-
-		return (widget, button)
-
 	def _append_row(self, **data):
 		current_row =  data["id"] - 1
 
 		for i, value in enumerate(data.values()):
 			self.setItem(current_row, i, QTableWidgetItem(str(value)))
 
-		update_widget, update_button = self._create_button_widget("Update")
+		update_button = QTableWidgetButton("Update")
 		update_button.clicked.connect(lambda state, row=current_row, row_id=data["id"]: self._update_row(row, row_id))
 		self.setCellWidget(current_row, self.buttons_offset, update_button)
 
-		delete_widget, delete_button = self._create_button_widget("Delete")
+		delete_button = QTableWidgetButton("Delete")
 		delete_button.clicked.connect(lambda state, row_id=data["id"]: self._delete_row(row_id))
-		self.setCellWidget(current_row, self.buttons_offset + 1, delete_widget)
+		self.setCellWidget(current_row, self.buttons_offset + 1, delete_button)
 
 	def _append_mother_row(self):
 		current_row = self.rowCount() - 1
 
-		create_widget, create_button = self._create_button_widget("Create")
+		create_button = QTableWidgetButton("Create")
 		create_button.clicked.connect(lambda state, row=current_row: self._create_row(row))
-		self.setCellWidget(current_row, self.buttons_offset, create_widget)
+		self.setCellWidget(current_row, self.buttons_offset, create_button)
 
 	def _initialize_table_widget(self):
 		self.clear()
