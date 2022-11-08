@@ -30,6 +30,7 @@ class MainWindow(QWidget):
 			user=getenv("PG_USER"), password=getenv("PG_PASSWORD"),
 			host=getenv("PG_HOST"), port=getenv("PG_PORT")
 		)
+		self.conn.set_session(autocommit=True)
 		self.cursor = self.conn.cursor()
 
 

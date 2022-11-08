@@ -80,7 +80,6 @@ class QDatabaseTableWidget(QTableWidget):
 		values = ','.join(['%s' for _ in range(len(self.column_names))])
 
 		self.cursor.execute(f"INSERT INTO {self.schema_name}.{self.table_name}({column_names}) VALUES({values})", column_values)
-		self.connection.commit()
 		self._update_contents()
 
 	def _update_row(self, row_idx: int, row_id: int):
@@ -88,10 +87,8 @@ class QDatabaseTableWidget(QTableWidget):
 		column_updates = ",".join(f"{column_name}={column_value}" for column_name, column_value in zip(self.column_names, column_values))
 		
 		self.cursor.execute(f"UPDATE {self.schema_name}.{self.table_name} SET {column_updates} WHERE id = %s", (row_id,))
-		self.connection.commit()
 		self._update_contents()
 
 	def _delete_row(self, row_id: int):
 		self.cursor.execute(f"DELETE FROM {self.schema_name}.{self.table_name} WHERE id = %s", (row_id,))
-		self.connection.commit()
 		self._update_contents()
