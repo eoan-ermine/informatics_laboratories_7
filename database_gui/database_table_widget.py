@@ -1,11 +1,12 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.errors import UniqueViolation, ForeignKeyViolation, InvalidTextRepresentation
 
 from PyQt5 import Qt, QtCore
 from PyQt5.QtWidgets import (
 	QWidget, QTableWidgetItem, QAbstractScrollArea,
 	QTableWidget, QPushButton, QHBoxLayout,
-	QSizePolicy
+	QSizePolicy, QMessageBox
 )
 
 from .table_widget_button import QTableWidgetButton
@@ -74,19 +75,35 @@ class QDatabaseTableWidget(QTableWidget):
 
 
 	def _create_row(self, row_idx: int):
-		column_values = tuple([self.item(row_idx, i).text() for i in range(len(self.column_names))])
+		try:
+			column_values = tuple([self.item(row_idx, i).text() for i in range(len(self.column_names))])
+		except AttributeError:
+			QMessageBox.critical(self, "Операция невозможна", "Пожалуйста, заполните значениями все колонки")
+			return
 
 		column_names = ','.join(self.column_names)
 		values = ','.join(['%s' for _ in range(len(self.column_names))])
 
-		self.cursor.execute(f"INSERT INTO {self.schema_name}.{self.table_name}({column_names}) VALUES({values})", column_values)
+		try:
+			self.cursor.execute(f"INSERT INTO {self.schema_name}.{self.table_name}({column_names}) VALUES({values})", column_values)
+		except UniqueViolation:
+			QMessageBox.critical(self, "Операция невозможна", "Строка с указанным идентификатором уже существует. Пожалуйста, измените идентификатор на уникальный и повторите попытку")
+			return
+
 		self._update_contents()
 
 	def _update_row(self, row_idx: int, row_id: int):
-		column_values = tuple([self.item(row_idx, i).text() for i in range(len(self.column_names))])
-		column_updates = ",".join(f"{column_name}={column_value}" for column_name, column_value in zip(self.column_names, column_values))
+		column_values = [self.item(row_idx, i).text() for i in range(len(self.column_names))]
+
+		column_updates = ",".join(f"{column_name}=%s" for column_name in self.column_names)
 		
-		self.cursor.execute(f"UPDATE {self.schema_name}.{self.table_name} SET {column_updates} WHERE id = %s", (row_id,))
+		try:
+			self.cursor.execute(f"UPDATE {self.schema_name}.{self.table_name} SET {column_updates} WHERE id = %s", (*tuple(column_values), str(row_id)))
+		except InvalidTextRepresentation:
+			QMessageBox.critical(self, "Операция невозможна", "Некорректное значение колонки (колонок). Пожалуйста, измените значение (значения) на корректные и повторите попытку")
+		except ForeignKeyViolation:
+			QMessageBox.critical(self, "Операция невозможна", "Нарушение foreign key ограничения. Пожалуйста, устраните его и повторите попытку")
+
 		self._update_contents()
 
 	def _delete_row(self, row_id: int):
